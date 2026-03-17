@@ -28,7 +28,9 @@ class ApiClient {
       config.body = JSON.stringify(body)
     }
 
-    const response = await fetch(`${API_BASE}${path}`, config)
+    // Ensure trailing slash to avoid 307 redirects that drop auth headers
+    const normalizedPath = path.endsWith('/') || path.includes('?') ? path : `${path}/`
+    const response = await fetch(`${API_BASE}${normalizedPath}`, config)
 
     if (response.status === 401) {
       localStorage.removeItem('discovery_token')
@@ -42,7 +44,13 @@ class ApiClient {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: 'Request failed' }))
-      throw new Error(error.detail || 'Request failed')
+      const detail = error.detail
+      const message = typeof detail === 'string'
+        ? detail
+        : Array.isArray(detail)
+        ? detail.map((d: { msg?: string }) => d.msg || String(d)).join(', ')
+        : 'Request failed'
+      throw new Error(message)
     }
 
     return response.json()
