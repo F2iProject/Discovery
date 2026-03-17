@@ -52,3 +52,16 @@ class DocumentVersionRead(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class DocumentAttachmentRead(BaseModel):
+    id: str
+    document_id: str
+    filename: str
+    file_path: str | None = None
+    description: str | None = None
+    file_size: int | None = None
+    uploaded_by: str | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}

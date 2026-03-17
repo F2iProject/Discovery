@@ -18,6 +18,7 @@ cd backend
 python -m venv venv
 source venv/bin/activate  # or venv\Scripts\activate on Windows
 pip install -r requirements.txt
+cp .env.example .env      # adjust values if needed
 uvicorn app.main:app --reload
 ```
 
@@ -43,11 +44,12 @@ npm run dev
 
 ## What We Need Help With
 
-- Frontend pages for the 6 new modules (NC, deviation, equipment, calibration, complaints, suppliers)
 - Tests for all endpoints
 - Documentation improvements
 - Accessibility improvements
 - Internationalization (i18n)
+- UI polish and responsive design
+- Docker Compose improvements
 
 ## License
 

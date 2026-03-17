@@ -20,6 +20,7 @@ class Document(TimestampMixin, TenantMixin, SoftDeleteMixin, Base):
     created_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
 
     versions: Mapped[list["DocumentVersion"]] = relationship(back_populates="document")
+    attachments: Mapped[list["DocumentAttachment"]] = relationship(back_populates="document")
 
 
 class DocumentVersion(TimestampMixin, Base):
@@ -34,3 +35,17 @@ class DocumentVersion(TimestampMixin, Base):
     uploaded_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
 
     document: Mapped["Document"] = relationship(back_populates="versions")
+
+
+class DocumentAttachment(TimestampMixin, Base):
+    __tablename__ = "document_attachments"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    document_id: Mapped[str] = mapped_column(String(36), ForeignKey("documents.id"), nullable=False)
+    filename: Mapped[str] = mapped_column(String(500), nullable=False)
+    file_path: Mapped[str] = mapped_column(String(1000), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    file_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    uploaded_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
+
+    document: Mapped["Document"] = relationship(back_populates="attachments")

@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change-me-in-production"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
+    UPLOAD_DIR: str = "uploads"
 
     class Config:
         env_file = ".env"
