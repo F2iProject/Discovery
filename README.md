@@ -1,6 +1,6 @@
 # Discovery
 
-**Get your lab organized.** Free, open-source documentation and quality management for research teams and early-stage companies.
+**Get your lab organized.** Free, open-source documentation management for research teams and early-stage companies.
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
