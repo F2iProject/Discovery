@@ -15,7 +15,7 @@ router = APIRouter()
 service = CRUDService(NonConformance, number_prefix="NC")
 
 
-@router.get("/", response_model=list[NonConformanceRead])
+@router.get("", response_model=list[NonConformanceRead])
 def list_items(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
@@ -25,7 +25,7 @@ def list_items(
     return service.list(db, tenant.id, skip=skip, limit=limit)
 
 
-@router.post("/", response_model=NonConformanceRead, status_code=201)
+@router.post("", response_model=NonConformanceRead, status_code=201)
 def create_item(
     payload: NonConformanceCreate,
     db: Session = Depends(get_db),

@@ -19,7 +19,7 @@ router = APIRouter()
 service = CRUDService(CAPA, number_prefix="CAPA")
 
 
-@router.get("/", response_model=list[CAPARead])
+@router.get("", response_model=list[CAPARead])
 def list_capas(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
@@ -29,7 +29,7 @@ def list_capas(
     return service.list(db, tenant.id, skip=skip, limit=limit)
 
 
-@router.post("/", response_model=CAPARead, status_code=201)
+@router.post("", response_model=CAPARead, status_code=201)
 def create_capa(
     payload: CAPACreate,
     db: Session = Depends(get_db),

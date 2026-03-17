@@ -28,9 +28,7 @@ class ApiClient {
       config.body = JSON.stringify(body)
     }
 
-    // Ensure trailing slash to avoid 307 redirects that drop auth headers
-    const normalizedPath = path.endsWith('/') || path.includes('?') ? path : `${path}/`
-    const response = await fetch(`${API_BASE}${normalizedPath}`, config)
+    const response = await fetch(`${API_BASE}${path}`, config)
 
     if (response.status === 401) {
       localStorage.removeItem('discovery_token')
@@ -70,6 +68,42 @@ class ApiClient {
 
   delete(path: string) {
     return this.request(path, { method: 'DELETE' })
+  }
+
+  async upload<T>(path: string, file: File, fields?: Record<string, string>): Promise<T> {
+    const token = this.getToken()
+    const formData = new FormData()
+    formData.append('file', file)
+    if (fields) {
+      Object.entries(fields).forEach(([key, value]) => formData.append(key, value))
+    }
+
+    const response = await fetch(`${API_BASE}${path}`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    })
+
+    if (response.status === 401) {
+      localStorage.removeItem('discovery_token')
+      window.location.href = '/login'
+      throw new Error('Unauthorized')
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Upload failed' }))
+      const detail = error.detail
+      const message = typeof detail === 'string'
+        ? detail
+        : Array.isArray(detail)
+        ? detail.map((d: { msg?: string }) => d.msg || String(d)).join(', ')
+        : 'Upload failed'
+      throw new Error(message)
+    }
+
+    return response.json()
   }
 }
 

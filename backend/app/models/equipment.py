@@ -1,7 +1,7 @@
 """Equipment — registry of lab instruments and devices."""
 
-from sqlalchemy import String, Text, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, Text, Integer, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 from app.models.mixins import TimestampMixin, TenantMixin, SoftDeleteMixin, generate_uuid
@@ -21,3 +21,19 @@ class Equipment(TimestampMixin, TenantMixin, SoftDeleteMixin, Base):
     status: Mapped[str] = mapped_column(String(30), default="active")  # active | maintenance | retired | out_of_service
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     added_by: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+
+    photos: Mapped[list["EquipmentPhoto"]] = relationship(back_populates="equipment")
+
+
+class EquipmentPhoto(TimestampMixin, Base):
+    __tablename__ = "equipment_photos"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    equipment_id: Mapped[str] = mapped_column(String(36), ForeignKey("equipment.id"), nullable=False)
+    filename: Mapped[str] = mapped_column(String(500), nullable=False)
+    file_path: Mapped[str] = mapped_column(String(1000), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    file_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    uploaded_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
+
+    equipment: Mapped["Equipment"] = relationship(back_populates="photos")

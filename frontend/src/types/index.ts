@@ -39,6 +39,17 @@ export interface DocumentVersion {
   created_at: string
 }
 
+export interface DocumentAttachment {
+  id: string
+  document_id: string
+  filename: string
+  file_path: string | null
+  description: string | null
+  file_size: number | null
+  uploaded_by: string | null
+  created_at: string
+}
+
 // Change Control
 export interface ChangeControl {
   id: string
@@ -182,6 +193,17 @@ export interface Equipment {
   updated_at: string
 }
 
+export interface EquipmentPhoto {
+  id: string
+  equipment_id: string
+  filename: string
+  file_path: string | null
+  description: string | null
+  file_size: number | null
+  uploaded_by: string | null
+  created_at: string
+}
+
 // Calibration
 export interface Calibration {
   id: string
@@ -217,12 +239,27 @@ export interface Complaint {
 }
 
 // Supplier
+export interface SupplierDocument {
+  id: string
+  supplier_id: string
+  filename: string
+  file_path: string | null
+  description: string | null
+  file_size: number | null
+  uploaded_by: string | null
+  created_at: string
+}
+
 export interface Supplier {
   id: string
   name: string
+  mpn: string | null
+  description: string | null
   contact_name: string | null
   contact_email: string | null
   contact_phone: string | null
+  phone: string | null
+  address: string | null
   website: string | null
   supplies: string | null
   qualification_status: string

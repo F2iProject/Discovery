@@ -15,7 +15,7 @@ router = APIRouter()
 service = CRUDService(Complaint, number_prefix="COMP")
 
 
-@router.get("/", response_model=list[ComplaintRead])
+@router.get("", response_model=list[ComplaintRead])
 def list_items(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
@@ -25,7 +25,7 @@ def list_items(
     return service.list(db, tenant.id, skip=skip, limit=limit)
 
 
-@router.post("/", response_model=ComplaintRead, status_code=201)
+@router.post("", response_model=ComplaintRead, status_code=201)
 def create_item(
     payload: ComplaintCreate,
     db: Session = Depends(get_db),
