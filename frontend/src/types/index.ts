@@ -121,6 +121,7 @@ export interface Training {
   id: string
   title: string
   description: string | null
+  url: string | null
   status: string
   document_id: string | null
   created_by: string | null
@@ -136,6 +137,17 @@ export interface TrainingAssignment {
   status: string
   completed_at: string | null
   due_date: string | null
+  created_at: string
+}
+
+export interface TrainingMaterial {
+  id: string
+  training_id: string
+  filename: string
+  file_path: string | null
+  description: string | null
+  file_size: number | null
+  uploaded_by: string | null
   created_at: string
 }
 

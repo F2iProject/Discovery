@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/PageHeader'
 import { StatusBadge } from '@/components/StatusBadge'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { formatDateTime } from '@/lib/utils'
-import type { DocumentVersion, DocumentAttachment, EquipmentPhoto, SupplierDocument } from '@/types'
+import type { DocumentVersion, DocumentAttachment, EquipmentPhoto, SupplierDocument, TrainingMaterial } from '@/types'
 
 const moduleMetadata: Record<string, { title: string; apiPath: string; listPath: string; fields: FieldDef[] }> = {
   documents: {
@@ -74,6 +74,7 @@ const moduleMetadata: Record<string, { title: string; apiPath: string; listPath:
     fields: [
       { key: 'title', label: 'Title', editable: true },
       { key: 'status', label: 'Status', editable: true, type: 'select', options: ['draft', 'active', 'retired'] },
+      { key: 'url', label: 'Link / URL', editable: true },
       { key: 'description', label: 'Description', editable: true, type: 'textarea' },
     ],
   },
@@ -246,6 +247,7 @@ export function ModuleDetailPage({ module }: { module: string }) {
   const isDocuments = module === 'documents'
   const isEquipment = module === 'equipment'
   const isSuppliers = module === 'suppliers'
+  const isTrainings = module === 'trainings'
 
   // Attachment state (documents module)
   const [attachments, setAttachments] = useState<DocumentAttachment[]>([])
@@ -267,6 +269,14 @@ export function ModuleDetailPage({ module }: { module: string }) {
   const [vendorDocError, setVendorDocError] = useState('')
   const [vendorDocDragOver, setVendorDocDragOver] = useState(false)
   const [vendorDocDescription, setVendorDocDescription] = useState('')
+
+  // Training material state
+  const materialInputRef = useRef<HTMLInputElement>(null)
+  const [materials, setMaterials] = useState<TrainingMaterial[]>([])
+  const [materialUploading, setMaterialUploading] = useState(false)
+  const [materialError, setMaterialError] = useState('')
+  const [materialDragOver, setMaterialDragOver] = useState(false)
+  const [materialDescription, setMaterialDescription] = useState('')
 
   useEffect(() => {
     api.get<Record<string, unknown>>(`${meta.apiPath}/${id}`)
@@ -311,6 +321,15 @@ export function ModuleDetailPage({ module }: { module: string }) {
         .catch(() => setVendorDocs([]))
     }
   }, [isSuppliers, id])
+
+  // Load materials for trainings
+  useEffect(() => {
+    if (isTrainings && id) {
+      api.get<TrainingMaterial[]>(`/trainings/${id}/materials`)
+        .then(setMaterials)
+        .catch(() => setMaterials([]))
+    }
+  }, [isTrainings, id])
 
   const handleSave = async () => {
     setSaving(true)
@@ -536,6 +555,58 @@ export function ModuleDetailPage({ module }: { module: string }) {
       })
   }
 
+  // --- Training material handlers ---
+  const handleMaterialUpload = useCallback(async (file: File) => {
+    if (!id) return
+    setMaterialUploading(true)
+    setMaterialError('')
+    try {
+      const newMaterial = await api.upload<TrainingMaterial>(
+        `/trainings/${id}/materials`,
+        file,
+        materialDescription ? { description: materialDescription } : undefined
+      )
+      setMaterials((prev) => [...prev, newMaterial])
+      setMaterialDescription('')
+      if (materialInputRef.current) materialInputRef.current.value = ''
+    } catch (err) {
+      setMaterialError(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setMaterialUploading(false)
+    }
+  }, [id, materialDescription])
+
+  const handleMaterialDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setMaterialDragOver(false)
+    const file = e.dataTransfer.files[0]
+    if (file) handleMaterialUpload(file)
+  }, [handleMaterialUpload])
+
+  const handleDeleteMaterial = async (mat: TrainingMaterial) => {
+    if (!confirm(`Delete "${mat.filename}"?`)) return
+    try {
+      await api.delete(`/trainings/${id}/materials/${mat.id}`)
+      setMaterials((prev) => prev.filter((m) => m.id !== mat.id))
+    } catch (err) {
+      console.error('Failed to delete material:', err)
+    }
+  }
+
+  const handleDownloadMaterial = (mat: TrainingMaterial) => {
+    const token = localStorage.getItem('discovery_token')
+    const url = `/api/trainings/${id}/materials/${mat.id}/download`
+    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => res.blob())
+      .then((blob) => {
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(blob)
+        a.download = mat.filename
+        a.click()
+        URL.revokeObjectURL(a.href)
+      })
+  }
+
   const handleDownloadAttachment = (att: DocumentAttachment) => {
     const token = localStorage.getItem('discovery_token')
     const url = `/api/documents/${id}/attachments/${att.id}/download`
@@ -652,6 +723,15 @@ export function ModuleDetailPage({ module }: { module: string }) {
                 )
               ) : field.type === 'status' || field.key === 'status' || field.key === 'qualification_status' || field.key === 'priority' || field.key === 'severity' ? (
                 <StatusBadge status={String(item[field.key] || '')} />
+              ) : field.key === 'url' && item[field.key] ? (
+                <a
+                  href={String(item[field.key])}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cyan-400 hover:text-cyan-300 underline break-all"
+                >
+                  {String(item[field.key])}
+                </a>
               ) : (
                 <p className="text-gray-200">
                   {item[field.key] != null ? String(item[field.key]) : '—'}
@@ -1096,6 +1176,111 @@ export function ModuleDetailPage({ module }: { module: string }) {
           {vendorDocs.length === 0 && !vendorDocUploading && (
             <p className="text-gray-600 text-sm mt-4 text-center">
               No vendor documents yet.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Training Materials Section */}
+      {isTrainings && (
+        <div className="card mt-6">
+          <h2 className="text-lg font-semibold text-gray-200 mb-4">Training Materials</h2>
+          <p className="text-gray-500 text-sm mb-4">
+            Slides, handouts, videos, SOPs, and other training content.
+          </p>
+
+          {/* Material Upload Area */}
+          <div
+            className={`
+              relative border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer
+              ${materialDragOver
+                ? 'border-cyan-400 bg-cyan-400/5'
+                : 'border-navy-700 hover:border-navy-600 hover:bg-navy-900/50'
+              }
+              ${materialUploading ? 'pointer-events-none opacity-60' : ''}
+            `}
+            onDragOver={(e) => { e.preventDefault(); setMaterialDragOver(true) }}
+            onDragLeave={() => setMaterialDragOver(false)}
+            onDrop={handleMaterialDrop}
+            onClick={() => materialInputRef.current?.click()}
+          >
+            <input
+              ref={materialInputRef}
+              type="file"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleMaterialUpload(file)
+              }}
+            />
+            <div className="text-2xl mb-1">{materialUploading ? '⏳' : '📚'}</div>
+            <p className="text-gray-400 text-sm">
+              {materialUploading ? 'Uploading...' : 'Drop a file here or click to upload'}
+            </p>
+            <p className="text-gray-600 text-xs mt-1">
+              PDF, Word, Excel, PowerPoint, images, videos — up to 50 MB
+            </p>
+          </div>
+
+          {/* Description input */}
+          <div className="mt-3">
+            <input
+              type="text"
+              placeholder="Description (optional) — e.g. slide deck, handout, training video"
+              value={materialDescription}
+              onChange={(e) => setMaterialDescription(e.target.value)}
+              className="input-field text-sm"
+            />
+          </div>
+
+          {materialError && (
+            <p className="text-red-400 text-sm mt-2">{materialError}</p>
+          )}
+
+          {/* Material List */}
+          {materials.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {materials.map((mat) => (
+                <div
+                  key={mat.id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-navy-900/50 border border-navy-800 hover:border-navy-700 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-lg flex-shrink-0">{fileIcon(mat.filename)}</span>
+                    <div className="min-w-0">
+                      <span className="text-sm text-gray-200 truncate block">{mat.filename}</span>
+                      {mat.description && (
+                        <p className="text-xs text-gray-500 mt-0.5 truncate">{mat.description}</p>
+                      )}
+                      <p className="text-xs text-gray-600 mt-0.5">
+                        {mat.file_size ? formatFileSize(mat.file_size) + ' · ' : ''}{formatDateTime(mat.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDownloadMaterial(mat) }}
+                      className="btn-ghost text-xs"
+                      title="Download"
+                    >
+                      ↓ Download
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeleteMaterial(mat) }}
+                      className="btn-ghost text-xs text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                      title="Delete"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {materials.length === 0 && !materialUploading && (
+            <p className="text-gray-600 text-sm mt-4 text-center">
+              No materials yet. Upload training content above.
             </p>
           )}
         </div>

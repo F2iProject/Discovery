@@ -43,5 +43,8 @@ htmlcov/
 .coverage
 coverage.xml
 
+# Uploads
+uploads/
+
 # Build
 *.pyc
