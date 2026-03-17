@@ -21,4 +21,4 @@ class CalibrationRecord(TimestampMixin, TenantMixin, Base):
     method: Mapped[str | None] = mapped_column(String(255), nullable=True)
     certificate_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    performed_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
+    performed_by: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)

@@ -18,5 +18,5 @@ class ChangeControl(TimestampMixin, TenantMixin, SoftDeleteMixin, Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     justification: Mapped[str | None] = mapped_column(Text, nullable=True)
     impact_assessment: Mapped[str | None] = mapped_column(Text, nullable=True)
-    requested_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
+    requested_by: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
     document_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("documents.id"), nullable=True)

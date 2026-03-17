@@ -20,4 +20,4 @@ class Deviation(TimestampMixin, TenantMixin, SoftDeleteMixin, Base):
     resolution: Mapped[str | None] = mapped_column(Text, nullable=True)
     affected_document_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("documents.id"), nullable=True)
     capa_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("capas.id"), nullable=True)  # escalation link
-    reported_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
+    reported_by: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)

@@ -19,4 +19,4 @@ class Supplier(TimestampMixin, TenantMixin, SoftDeleteMixin, Base):
     supplies: Mapped[str | None] = mapped_column(Text, nullable=True)  # what they provide
     qualification_status: Mapped[str] = mapped_column(String(30), default="pending")  # pending | approved | conditional | disqualified
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    added_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
+    added_by: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)

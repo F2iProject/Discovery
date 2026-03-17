@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-navy-950 text-gray-200;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-navy-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-navy-700 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-navy-600;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-cyan-500 hover:bg-cyan-400 text-navy-950 font-semibold px-4 py-2 rounded-lg transition-colors;
+  }
+  .btn-secondary {
+    @apply bg-navy-800 hover:bg-navy-700 text-gray-200 font-medium px-4 py-2 rounded-lg border border-navy-600 transition-colors;
+  }
+  .btn-ghost {
+    @apply hover:bg-navy-800 text-gray-400 hover:text-gray-200 px-3 py-2 rounded-lg transition-colors;
+  }
+  .btn-danger {
+    @apply bg-red-600/20 hover:bg-red-600/30 text-red-400 font-medium px-4 py-2 rounded-lg border border-red-600/30 transition-colors;
+  }
+  .input-field {
+    @apply bg-navy-900 border border-navy-700 rounded-lg px-3 py-2 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-colors w-full;
+  }
+  .card {
+    @apply bg-navy-900 border border-navy-800 rounded-xl p-6;
+  }
+}

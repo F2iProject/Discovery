@@ -20,4 +20,4 @@ class Equipment(TimestampMixin, TenantMixin, SoftDeleteMixin, Base):
     location: Mapped[str | None] = mapped_column(String(255), nullable=True)
     status: Mapped[str] = mapped_column(String(30), default="active")  # active | maintenance | retired | out_of_service
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    added_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
+    added_by: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)

@@ -20,4 +20,4 @@ class NonConformance(TimestampMixin, TenantMixin, SoftDeleteMixin, Base):
     disposition: Mapped[str | None] = mapped_column(String(50), nullable=True)  # use_as_is | rework | scrap | return_to_supplier | other
     disposition_rationale: Mapped[str | None] = mapped_column(Text, nullable=True)
     capa_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("capas.id"), nullable=True)  # escalation link
-    reported_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
+    reported_by: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)

@@ -10,9 +10,11 @@ alembic==1.17.2
 psycopg2-binary>=2.9,<3
 
 # Auth
-python-jose==3.5.0
+python-jose[cryptography]==3.5.0
+passlib[bcrypt]>=1.7,<2
 bcrypt>=4.2,<6
 python-multipart==0.0.22
+email-validator>=2.0,<3
 
 # Cache
 redis>=5.0,<6
