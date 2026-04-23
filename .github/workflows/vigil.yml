@@ -1,0 +1,127 @@
+# Drop this file into any repo at .github/workflows/vigil.yml
+# to auto-review PRs with Vigil.
+#
+# Required secrets:
+#   GEMINI_API_KEY  — if using gemini/* models (default)
+#   ANTHROPIC_API_KEY — if using claude-* models
+#   OPENAI_API_KEY — if using openai/* models
+#
+# The built-in GITHUB_TOKEN is used for posting reviews.
+# Since it's a bot account, it CAN approve/request_changes (not your own PR).
+#
+# Triggers:
+#   - PR opened/reopened/ready_for_review → full review
+#   - PR synchronize (new commit) → re-review, cancels any in-progress run for the same PR
+#   - `/vigil review` comment → on-demand re-review
+#
+# Runs on the F2iLLC self-hosted runner pool (ci-general). Using GitHub-hosted
+# runners on private F2iLLC repos hits the org Actions billing cap and silently
+# skips the job ("Actions budget is preventing further use"), which is why
+# reviews appear to start but never post deliverables.
+
+name: Vigil PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review_comment:
+    types: [created]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  review:
+    runs-on: [self-hosted, linux, x64, ci-general]
+    timeout-minutes: 20
+    # One review per PR: a new commit cancels any in-flight review for the same PR.
+    # Only the review job uses this group — dismiss/resolve-addressed run independently
+    # so they aren't cancelled by unrelated commits.
+    concurrency:
+      group: vigil-review-${{ github.event.pull_request.number || github.event.issue.number }}
+      cancel-in-progress: true
+    # PR events: skip drafts and bot PRs
+    # Comment events: must be on a PR and contain /vigil review
+    if: >-
+      (
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.draft == false &&
+        github.actor != 'dependabot[bot]'
+      ) || (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request &&
+        contains(github.event.comment.body, '/vigil review')
+      )
+    steps:
+      - name: Determine PR URL
+        id: pr
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "issue_comment" ]; then
+            echo "url=${{ github.event.issue.pull_request.html_url }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "url=${{ github.event.pull_request.html_url }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: F2iLLC/vigil@v1
+        with:
+          pr-url: ${{ steps.pr.outputs.url }}
+          model: "gemini/gemini-2.5-flash"
+          gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
+
+  dismiss:
+    runs-on: [self-hosted, linux, x64, ci-general]
+    timeout-minutes: 10
+    # Resolve Vigil threads when someone replies "resolved" to an inline comment
+    # or posts "resolved" in the PR conversation
+    if: >-
+      (
+        github.event_name == 'pull_request_review_comment' &&
+        (
+          contains(github.event.comment.body, 'resolved') ||
+          contains(github.event.comment.body, 'Resolved') ||
+          contains(github.event.comment.body, 'fixed') ||
+          contains(github.event.comment.body, 'Fixed') ||
+          contains(github.event.comment.body, 'addressed') ||
+          contains(github.event.comment.body, 'Addressed') ||
+          contains(github.event.comment.body, 'done') ||
+          contains(github.event.comment.body, 'Done')
+        )
+      ) || (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request &&
+        !contains(github.event.comment.body, '/vigil review') &&
+        (
+          contains(github.event.comment.body, 'resolved') ||
+          contains(github.event.comment.body, 'Resolved')
+        )
+      )
+    steps:
+      - name: Determine PR URL
+        id: pr
+        shell: bash
+        run: |
+          echo "url=${{ github.event.pull_request.html_url || github.event.issue.pull_request.html_url }}" >> "$GITHUB_OUTPUT"
+
+      - uses: F2iLLC/vigil@v1
+        with:
+          pr-url: ${{ steps.pr.outputs.url }}
+          command: dismiss-resolved
+
+  resolve-addressed:
+    runs-on: [self-hosted, linux, x64, ci-general]
+    timeout-minutes: 10
+    # Auto-resolve Vigil threads when code at commented lines changes
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.action == 'synchronize' &&
+      github.event.pull_request.draft == false
+    steps:
+      - uses: F2iLLC/vigil@v1
+        with:
+          command: resolve-addressed
+          gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
